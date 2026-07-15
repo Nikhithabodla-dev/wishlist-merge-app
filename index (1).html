@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Root &amp; Leaf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEF0E7;
+    --surface:#FFFFFF;
+    --ink:#1F2A1E;
+    --ink-soft:#5B6656;
+    --accent:#3F6144;
+    --accent-dark:#2C4530;
+    --gold:#B98B2E;
+    --brick:#A8503A;
+    --line:#D9DBCB;
+    --radius:12px;
+    --font-display:'Fraunces', serif;
+    --font-body:'Work Sans', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font-body);
+    line-height:1.4;
+  }
+  a, button{ font-family:inherit; }
+  button{ cursor:pointer; }
+  button:focus-visible, select:focus-visible, input:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid var(--accent-dark);
+    outline-offset:2px;
+  }
+
+  /* ---------- Header ---------- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 28px;
+    border-bottom:1px solid var(--line);
+    background:var(--bg);
+    position:sticky; top:0; z-index:20;
+  }
+  .brand{
+    display:flex; align-items:baseline; gap:10px;
+  }
+  .brand h1{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:26px;
+    margin:0;
+    letter-spacing:0.2px;
+  }
+  .brand span.tag{
+    font-size:12px;
+    color:var(--ink-soft);
+    font-family:var(--font-mono);
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+  }
+  .wishlist-toggle{
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:9px 16px;
+    font-size:14px;
+    font-weight:500;
+    color:var(--ink);
+    transition:border-color .15s ease;
+  }
+  .wishlist-toggle:hover{ border-color:var(--accent); }
+  .wishlist-toggle .count{
+    background:var(--accent);
+    color:#fff;
+    font-family:var(--font-mono);
+    font-size:12px;
+    border-radius:999px;
+    padding:2px 8px;
+    min-width:20px;
+    text-align:center;
+  }
+
+  /* ---------- Layout ---------- */
+  main{ padding:28px; max-width:1100px; margin:0 auto; }
+  .target-row{
+    display:flex; align-items:center; gap:10px; margin-bottom:16px;
+    font-size:13px; color:var(--ink-soft);
+  }
+  .target-row select{
+    border:1px solid var(--line); border-radius:8px; padding:7px 10px; font-size:13px;
+    background:var(--surface); color:var(--ink); font-weight:500;
+  }
+  .filters{
+    display:flex; gap:8px; flex-wrap:wrap; margin-bottom:22px;
+  }
+  .filter-chip{
+    border:1px solid var(--line);
+    background:var(--surface);
+    padding:7px 14px;
+    border-radius:999px;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .filter-chip[aria-pressed="true"]{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(220px,1fr));
+    gap:18px;
+  }
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+    display:flex; flex-direction:column; gap:8px;
+    position:relative;
+  }
+  .card .icon{
+    font-size:38px;
+    line-height:1;
+  }
+  .card .badge{
+    position:absolute; top:14px; right:14px;
+    font-family:var(--font-mono);
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    background:var(--brick);
+    color:#fff;
+    padding:3px 7px;
+    border-radius:5px;
+  }
+  .card h3{
+    font-family:var(--font-display);
+    font-size:18px;
+    font-weight:500;
+    margin:0;
+  }
+  .card .cat{
+    font-size:12px;
+    color:var(--ink-soft);
+    font-family:var(--font-mono);
+  }
+  .card .desc{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:0;
+    flex:1;
+  }
+  .card .row{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:4px;
+  }
+  .price{
+    font-family:var(--font-mono);
+    font-size:16px;
+    font-weight:500;
+  }
+  .heart-btn{
+    border:1px solid var(--line);
+    background:var(--bg);
+    border-radius:8px;
+    padding:7px 10px;
+    font-size:14px;
+    display:flex; align-items:center; gap:6px;
+    color:var(--ink);
+  }
+  .heart-btn.active{
+    background:var(--gold);
+    border-color:var(--gold);
+    color:#2A2005;
+  }
+
+  /* ---------- Drawer ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(20,24,16,0.35);
+    opacity:0; pointer-events:none; transition:opacity .18s ease;
+    z-index:30;
+  }
+  .overlay.open{ opacity:1; pointer-events:auto; }
+  .drawer{
+    position:fixed; top:0; right:0; height:100%;
+    width:min(420px, 92vw);
+    background:var(--bg);
+    border-left:1px solid var(--line);
+    transform:translateX(100%);
+    transition:transform .2s ease;
+    z-index:31;
+    display:flex; flex-direction:column;
+  }
+  .drawer.open{ transform:translateX(0); }
+  .drawer-head{
+    padding:20px 22px 14px;
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .drawer-head h2{
+    font-family:var(--font-display);
+    font-size:20px; margin:0; font-weight:600;
+  }
+  .icon-btn{
+    background:none; border:none; font-size:20px; color:var(--ink-soft); padding:4px;
+  }
+  .drawer-body{ padding:16px 22px; overflow-y:auto; flex:1; }
+
+  .list-block{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    margin-bottom:14px;
+    overflow:hidden;
+  }
+  .list-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 14px;
+    cursor:pointer;
+  }
+  .list-head .name-row{ display:flex; align-items:center; gap:8px; }
+  .list-head h3{
+    font-family:var(--font-display); font-size:16px; margin:0; font-weight:500;
+  }
+  .list-head .n{
+    font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);
+    background:var(--bg); border-radius:999px; padding:2px 8px;
+  }
+  .list-items{ border-top:1px solid var(--line); padding:6px 14px 12px; }
+  .list-items.collapsed{ display:none; }
+  .li-row{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:8px; padding:9px 0; border-bottom:1px dashed var(--line);
+    font-size:13px;
+  }
+  .li-row:last-child{ border-bottom:none; }
+  .li-main{ flex:1; }
+  .li-main .li-name{ font-weight:500; }
+  .li-main .li-note{ color:var(--ink-soft); font-size:12px; margin-top:2px; }
+  .li-main .li-unavailable{ color:var(--brick); font-size:12px; font-style:italic; }
+  .li-remove{
+    background:none; border:none; color:var(--brick); font-size:12px; font-family:var(--font-mono);
+    padding:2px 4px;
+  }
+  .empty-note{ color:var(--ink-soft); font-size:13px; padding:10px 0; }
+
+  .drawer-actions{ display:flex; gap:8px; margin-bottom:10px; }
+  .btn{
+    border:1px solid var(--line);
+    background:var(--surface);
+    border-radius:8px;
+    padding:8px 12px;
+    font-size:13px;
+    font-weight:500;
+    color:var(--ink);
+  }
+  .btn.primary{
+    background:var(--accent); border-color:var(--accent); color:#fff;
+  }
+  .btn.primary:hover{ background:var(--accent-dark); }
+  .btn.small{ font-size:12px; padding:6px 10px; }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+  .new-list-row{ display:flex; gap:8px; margin-bottom:16px; }
+  .new-list-row input{
+    flex:1; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:13px;
+    font-family:var(--font-body); background:var(--surface); color:var(--ink);
+  }
+
+  /* ---------- Merge panel ---------- */
+  .merge-panel{
+    border:1px solid var(--accent);
+    border-radius:var(--radius);
+    padding:16px;
+    background:#F4F6EF;
+    margin-top:6px;
+  }
+  .merge-panel h3{
+    font-family:var(--font-display); font-size:16px; margin:0 0 10px; font-weight:600;
+  }
+  .merge-row{ display:flex; gap:8px; margin-bottom:10px; }
+  .merge-row select{
+    flex:1; border:1px solid var(--line); border-radius:8px; padding:8px; font-size:13px;
+    background:var(--surface); color:var(--ink);
+  }
+  .merge-mode{ display:flex; gap:14px; font-size:13px; margin-bottom:10px; color:var(--ink-soft); }
+  .merge-mode label{ display:flex; align-items:center; gap:6px; }
+  .merge-name-row{ margin-bottom:10px; }
+  .merge-name-row input{
+    width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:13px;
+    background:var(--surface); color:var(--ink);
+  }
+  .merge-error{
+    color:var(--brick); font-size:12px; margin-bottom:8px; min-height:14px;
+  }
+  .merge-preview{
+    font-family:var(--font-mono); font-size:12px; color:var(--ink-soft);
+    background:var(--surface); border:1px solid var(--line); border-radius:8px;
+    padding:10px; margin-bottom:10px; display:none;
+  }
+  .merge-preview.show{ display:block; }
+  .merge-preview .venn{
+    display:flex; align-items:center; gap:6px; margin-bottom:6px; font-size:13px; color:var(--ink);
+  }
+  .merge-preview .venn b{ color:var(--accent-dark); }
+
+  /* ---------- Toast ---------- */
+  #toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--ink); color:#fff; padding:10px 18px; border-radius:8px;
+    font-size:13px; opacity:0; pointer-events:none; transition:opacity .2s ease;
+    z-index:50; max-width:90vw; text-align:center;
+  }
+  #toast.show{ opacity:1; }
+
+  @media (prefers-reduced-motion: reduce){
+    .drawer, .overlay, #toast{ transition:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <h1>Root &amp; Leaf</h1>
+    <span class="tag">plant nursery</span>
+  </div>
+  <button class="wishlist-toggle" id="drawerToggle" aria-haspopup="true">
+    <span>♡ Wishlists</span>
+    <span class="count" id="totalCount">0</span>
+  </button>
+</div>
+
+<main>
+  <div class="target-row">
+    <label for="targetList">Saving to:</label>
+    <select id="targetList" aria-label="Choose which wishlist new saves go to"></select>
+  </div>
+  <div class="filters" id="filters" role="group" aria-label="Filter by category"></div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<div class="overlay" id="overlay"></div>
+<aside class="drawer" id="drawer" aria-label="Your wishlists">
+  <div class="drawer-head">
+    <h2>Your wishlists</h2>
+    <button class="icon-btn" id="closeDrawer" aria-label="Close">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <div class="new-list-row">
+      <input type="text" id="newListName" placeholder="New list name (e.g. Bedroom refresh)">
+      <button class="btn" id="createListBtn">+ Create</button>
+    </div>
+
+    <div id="listsContainer"></div>
+
+    <div class="merge-panel" id="mergePanel" style="display:none;">
+      <h3>Merge two lists</h3>
+      <div class="merge-row">
+        <select id="mergeA" aria-label="First list to merge"></select>
+        <select id="mergeB" aria-label="Second list to merge"></select>
+      </div>
+      <div class="merge-mode">
+        <label><input type="radio" name="mergeMode" value="new" checked> Merge into a new list</label>
+        <label><input type="radio" name="mergeMode" value="intoA"> Merge into the first list</label>
+      </div>
+      <div class="merge-name-row">
+        <input type="text" id="mergeName" placeholder="Name for the merged list">
+      </div>
+      <div class="merge-preview" id="mergePreview"></div>
+      <div class="merge-error" id="mergeError"></div>
+      <button class="btn primary" id="doMerge">Merge lists</button>
+    </div>
+  </div>
+</aside>
+
+<div id="toast" role="status"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Catalog: the product shape ----------
+  // id, name, price (in cents to avoid float rounding), category, icon, description, inStock
+  const CATALOG = [
+    { id:"p1", name:"Snake Plant",        price:2400, category:"Low-light", icon:"🪴", description:"Nearly indestructible, tolerates neglect and dim corners.", inStock:true },
+    { id:"p2", name:"Fiddle-Leaf Fig",     price:5800, category:"Statement", icon:"🌿", description:"Tall, glossy leaves that anchor a room.", inStock:true },
+    { id:"p3", name:"Pothos, Golden",      price:1600, category:"Low-light", icon:"🍃", description:"Fast-trailing vine, forgiving with water.", inStock:true },
+    { id:"p4", name:"Monstera Deliciosa",  price:4200, category:"Statement", icon:"🌱", description:"Iconic split leaves, loves bright indirect light.", inStock:true },
+    { id:"p5", name:"Calathea Orbifolia",  price:3200, category:"Pet-safe", icon:"☘️", description:"Striped silvery leaves, non-toxic to pets.", inStock:false },
+    { id:"p6", name:"Areca Palm",          price:4600, category:"Pet-safe", icon:"🌴", description:"Feathery fronds, safe around cats and dogs.", inStock:true },
+    { id:"p7", name:"ZZ Plant",            price:2800, category:"Low-light", icon:"🪴", description:"Waxy leaves, thrives on very little water.", inStock:true },
+    { id:"p8", name:"String of Pearls",    price:1400, category:"Sun-loving", icon:"🌵", description:"Trailing succulent beads, wants a bright sill.", inStock:true },
+    { id:"p9", name:"Bird of Paradise",    price:6400, category:"Statement", icon:"🌺", description:"Broad tropical leaves, needs a sunny corner.", inStock:true },
+    { id:"p10", name:"Boston Fern",        price:1900, category:"Pet-safe", icon:"🌿", description:"Lush and feathery, likes humidity.", inStock:true },
+    { id:"p11", name:"Jade Plant",         price:1200, category:"Sun-loving", icon:"🌵", description:"Chunky succulent leaves, a classic windowsill plant.", inStock:true },
+    { id:"p12", name:"Rare Variegated Monstera", price:14000, category:"Statement", icon:"🌱", description:"Limited stock, cream-and-green variegation.", inStock:false },
+  ];
+
+  const STORAGE_KEY = "wishlists-v1";
+  let state = { wishlists: [], activeListId: null };
+  let drawerOpen = false;
+  let activeFilter = "All";
+
+  // ---------- Storage ----------
+  async function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        state = JSON.parse(raw);
+        if(!state.activeListId || !state.wishlists.some(w => w.id === state.activeListId)){
+          state.activeListId = state.wishlists[0] ? state.wishlists[0].id : null;
+        }
+        return;
+      }
+    }catch(e){
+      console.error("Couldn't read saved wishlists", e);
+    }
+    // default state: one starter list
+    const starterId = genId();
+    state = {
+      wishlists: [
+        { id: starterId, name:"My Wishlist", items: [], createdAt: Date.now(), updatedAt: Date.now() }
+      ],
+      activeListId: starterId
+    };
+    await persist();
+  }
+
+  async function persist(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }catch(e){
+      showToast("Couldn't save — your browser may be blocking storage.");
+      console.error("storage error", e);
+    }
+  }
+
+  function genId(){
+    return "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2,7);
+  }
+
+  function getProduct(productId){
+    return CATALOG.find(p => p.id === productId) || null;
+  }
+
+  // ---------- Toast ----------
+  let toastTimer = null;
+  function showToast(msg){
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> t.classList.remove("show"), 2600);
+  }
+
+  // ---------- Wishlist operations ----------
+  function isInActiveList(productId){
+    const list = state.wishlists.find(w => w.id === state.activeListId);
+    return !!list && list.items.some(it => it.productId === productId);
+  }
+
+  function toggleWishlistItem(productId){
+    if(state.wishlists.length === 0) return;
+    if(!state.activeListId || !state.wishlists.some(w => w.id === state.activeListId)){
+      state.activeListId = state.wishlists[0].id;
+    }
+    const target = state.wishlists.find(w => w.id === state.activeListId);
+    const existingIdx = target.items.findIndex(it => it.productId === productId);
+    if(existingIdx >= 0){
+      target.items.splice(existingIdx, 1);
+      showToast("Removed from " + target.name);
+    } else {
+      target.items.push({ productId, addedAt: Date.now(), note:"" });
+      showToast("Added to " + target.name);
+    }
+    target.updatedAt = Date.now();
+    persist();
+    renderGrid();
+    renderDrawer();
+  }
+
+  function createList(name){
+    const trimmed = (name || "").trim();
+    if(!trimmed){ showToast("Give the list a name first."); return; }
+    state.wishlists.push({ id: genId(), name: trimmed, items: [], createdAt: Date.now(), updatedAt: Date.now() });
+    persist();
+    renderDrawer();
+    showToast('Created "' + trimmed + '"');
+  }
+
+  function deleteList(id){
+    const list = state.wishlists.find(w => w.id === id);
+    if(!list) return;
+    if(state.wishlists.length === 1){
+      showToast("You need at least one list — create another before deleting this one.");
+      return;
+    }
+    state.wishlists = state.wishlists.filter(w => w.id !== id);
+    persist();
+    renderDrawer();
+    renderGrid();
+    showToast('Deleted "' + list.name + '"');
+  }
+
+  function removeItem(listId, productId){
+    const list = state.wishlists.find(w => w.id === listId);
+    if(!list) return;
+    list.items = list.items.filter(it => it.productId !== productId);
+    list.updatedAt = Date.now();
+    persist();
+    renderDrawer();
+    renderGrid();
+  }
+
+  // Core merge logic — the one hard requirement.
+  // Dedup by productId: keep the EARLIEST addedAt (longest-wanted wins),
+  // and combine distinct notes rather than dropping either.
+  function computeMerge(listA, listB){
+    const map = new Map();
+    for(const item of [...listA.items, ...listB.items]){
+      if(!map.has(item.productId)){
+        map.set(item.productId, {
+          productId: item.productId,
+          addedAt: item.addedAt,
+          notes: item.note ? new Set([item.note]) : new Set()
+        });
+      } else {
+        const existing = map.get(item.productId);
+        existing.addedAt = Math.min(existing.addedAt, item.addedAt);
+        if(item.note) existing.notes.add(item.note);
+      }
+    }
+    const merged = Array.from(map.values())
+      .map(v => ({ productId: v.productId, addedAt: v.addedAt, note: Array.from(v.notes).join(" • ") }))
+      .sort((a,b) => a.addedAt - b.addedAt);
+    const duplicateCount = listA.items.length + listB.items.length - merged.length;
+    return { items: merged, duplicateCount };
+  }
+
+  function performMerge(idA, idB, mode, newName){
+    const listA = state.wishlists.find(w => w.id === idA);
+    const listB = state.wishlists.find(w => w.id === idB);
+    if(!listA || !listB) return { ok:false, error:"Pick two lists to merge." };
+    if(idA === idB) return { ok:false, error:"Choose two different lists — a list can't merge with itself." };
+
+    const { items, duplicateCount } = computeMerge(listA, listB);
+
+    if(mode === "new"){
+      const name = (newName || "").trim() || (listA.name + " + " + listB.name);
+      const merged = { id: genId(), name, items, createdAt: Date.now(), updatedAt: Date.now() };
+      state.wishlists.push(merged);
+    } else {
+      // merge into first list, remove second
+      listA.items = items;
+      listA.updatedAt = Date.now();
+      if(newName && newName.trim()) listA.name = newName.trim();
+      state.wishlists = state.wishlists.filter(w => w.id !== listB.id);
+    }
+    persist();
+    return { ok:true, duplicateCount, total: items.length };
+  }
+
+  // ---------- Rendering: product grid ----------
+  function renderTargetSelect(){
+    const sel = document.getElementById("targetList");
+    sel.innerHTML = state.wishlists.map(w =>
+      '<option value="' + w.id + '">' + escapeHtml(w.name) + ' (' + w.items.length + ')</option>'
+    ).join("");
+    if(state.wishlists.some(w => w.id === state.activeListId)){
+      sel.value = state.activeListId;
+    } else if(state.wishlists[0]){
+      state.activeListId = state.wishlists[0].id;
+      sel.value = state.activeListId;
+    }
+  }
+
+  document.getElementById("targetList").addEventListener("change", (e) => {
+    state.activeListId = e.target.value;
+    persist();
+    renderGrid();
+  });
+
+  function renderFilters(){
+    const cats = ["All", ...new Set(CATALOG.map(p => p.category))];
+    const el = document.getElementById("filters");
+    el.innerHTML = "";
+    cats.forEach(cat => {
+      const btn = document.createElement("button");
+      btn.className = "filter-chip";
+      btn.textContent = cat;
+      btn.setAttribute("aria-pressed", String(cat === activeFilter));
+      btn.addEventListener("click", () => { activeFilter = cat; renderFilters(); renderGrid(); });
+      el.appendChild(btn);
+    });
+  }
+
+  function renderGrid(){
+    const el = document.getElementById("grid");
+    el.innerHTML = "";
+    const visible = activeFilter === "All" ? CATALOG : CATALOG.filter(p => p.category === activeFilter);
+    visible.forEach(p => {
+      const card = document.createElement("div");
+      card.className = "card";
+      const active = isInActiveList(p.id);
+      card.innerHTML =
+        (!p.inStock ? '<span class="badge">Out of stock</span>' : "") +
+        '<div class="icon">' + p.icon + '</div>' +
+        '<h3>' + escapeHtml(p.name) + '</h3>' +
+        '<div class="cat">' + escapeHtml(p.category) + '</div>' +
+        '<p class="desc">' + escapeHtml(p.description) + '</p>' +
+        '<div class="row">' +
+          '<span class="price">$' + (p.price/100).toFixed(2) + '</span>' +
+          '<button class="heart-btn' + (active ? ' active' : '') + '" data-id="' + p.id + '" aria-pressed="' + active + '">' +
+            (active ? '♥ Saved' : '♡ Save') +
+          '</button>' +
+        '</div>';
+      el.appendChild(card);
+    });
+    el.querySelectorAll(".heart-btn").forEach(btn => {
+      btn.addEventListener("click", () => toggleWishlistItem(btn.getAttribute("data-id")));
+    });
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement("div");
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  // ---------- Rendering: drawer ----------
+  const collapsedState = {};
+
+  function renderDrawer(){
+    renderTargetSelect();
+    const totalItems = state.wishlists.reduce((sum,w) => sum + w.items.length, 0);
+    document.getElementById("totalCount").textContent = totalItems;
+
+    const container = document.getElementById("listsContainer");
+    container.innerHTML = "";
+    state.wishlists.forEach(list => {
+      const block = document.createElement("div");
+      block.className = "list-block";
+      const collapsed = collapsedState[list.id] !== false; // default collapsed except first interaction
+      let itemsHtml = "";
+      if(list.items.length === 0){
+        itemsHtml = '<div class="empty-note">Nothing saved here yet.</div>';
+      } else {
+        itemsHtml = list.items.map(it => {
+          const p = getProduct(it.productId);
+          if(!p){
+            return '<div class="li-row"><div class="li-main"><div class="li-unavailable">Item unavailable (removed from catalog)</div></div>' +
+              '<button class="li-remove" data-list="' + list.id + '" data-product="' + it.productId + '">Remove</button></div>';
+          }
+          return '<div class="li-row">' +
+            '<div class="li-main"><div class="li-name">' + p.icon + ' ' + escapeHtml(p.name) + '</div>' +
+            (it.note ? '<div class="li-note">' + escapeHtml(it.note) + '</div>' : '') +
+            '</div>' +
+            '<button class="li-remove" data-list="' + list.id + '" data-product="' + it.productId + '">Remove</button>' +
+            '</div>';
+        }).join("");
+      }
+      block.innerHTML =
+        '<div class="list-head" data-list="' + list.id + '">' +
+          '<div class="name-row"><h3>' + escapeHtml(list.name) + '</h3><span class="n">' + list.items.length + '</span></div>' +
+          '<button class="btn small" data-delete="' + list.id + '">Delete</button>' +
+        '</div>' +
+        '<div class="list-items' + (collapsed ? ' collapsed' : '') + '" data-body="' + list.id + '">' + itemsHtml + '</div>';
+      container.appendChild(block);
+    });
+
+    container.querySelectorAll(".list-head").forEach(head => {
+      head.addEventListener("click", (e) => {
+        if(e.target.closest("button[data-delete]")) return;
+        const id = head.getAttribute("data-list");
+        collapsedState[id] = collapsedState[id] === false ? true : false;
+        renderDrawer();
+      });
+    });
+    container.querySelectorAll("button[data-delete]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteList(btn.getAttribute("data-delete"));
+      });
+    });
+    container.querySelectorAll("button.li-remove").forEach(btn => {
+      btn.addEventListener("click", () => removeItem(btn.getAttribute("data-list"), btn.getAttribute("data-product")));
+    });
+
+    renderMergePanel();
+  }
+
+  function renderMergePanel(){
+    const panel = document.getElementById("mergePanel");
+    if(state.wishlists.length < 2){
+      panel.style.display = "none";
+      return;
+    }
+    panel.style.display = "block";
+    const selA = document.getElementById("mergeA");
+    const selB = document.getElementById("mergeB");
+    const prevA = selA.value, prevB = selB.value;
+    const options = state.wishlists.map(w => '<option value="' + w.id + '">' + escapeHtml(w.name) + ' (' + w.items.length + ')</option>').join("");
+    selA.innerHTML = options;
+    selB.innerHTML = options;
+    if(state.wishlists.some(w => w.id === prevA)) selA.value = prevA;
+    if(state.wishlists.some(w => w.id === prevB)) selB.value = prevB;
+    if(selA.value === selB.value && state.wishlists.length > 1){
+      // default to two different lists
+      selB.selectedIndex = selB.selectedIndex === 0 ? 1 : 0;
+    }
+    updateMergePreview();
+  }
+
+  function updateMergePreview(){
+    const idA = document.getElementById("mergeA").value;
+    const idB = document.getElementById("mergeB").value;
+    const preview = document.getElementById("mergePreview");
+    const errorEl = document.getElementById("mergeError");
+    errorEl.textContent = "";
+    if(!idA || !idB || idA === idB){
+      preview.classList.remove("show");
+      if(idA && idB && idA === idB){
+        errorEl.textContent = "Pick two different lists.";
+      }
+      return;
+    }
+    const listA = state.wishlists.find(w => w.id === idA);
+    const listB = state.wishlists.find(w => w.id === idB);
+    const { items, duplicateCount } = computeMerge(listA, listB);
+    preview.classList.add("show");
+    preview.innerHTML =
+      '<div class="venn">' + listA.items.length + ' + ' + listB.items.length +
+      ' → <b>' + items.length + ' unique</b>' +
+      (duplicateCount > 0 ? ' (' + duplicateCount + ' duplicate' + (duplicateCount>1?'s':'') + ' combined)' : '') +
+      '</div>' +
+      (items.length === 0 ? 'Both lists are empty — the merged list will start empty too.' : 'Oldest-saved item wins the date; notes from both are kept.');
+  }
+
+  // ---------- Wire up static controls ----------
+  document.getElementById("drawerToggle").addEventListener("click", () => setDrawer(true));
+  document.getElementById("closeDrawer").addEventListener("click", () => setDrawer(false));
+  document.getElementById("overlay").addEventListener("click", () => setDrawer(false));
+
+  function setDrawer(open){
+    drawerOpen = open;
+    document.getElementById("drawer").classList.toggle("open", open);
+    document.getElementById("overlay").classList.toggle("open", open);
+  }
+
+  document.getElementById("createListBtn").addEventListener("click", () => {
+    const input = document.getElementById("newListName");
+    createList(input.value);
+    input.value = "";
+  });
+  document.getElementById("newListName").addEventListener("keydown", (e) => {
+    if(e.key === "Enter"){
+      createList(e.target.value);
+      e.target.value = "";
+    }
+  });
+
+  document.getElementById("mergeA").addEventListener("change", updateMergePreview);
+  document.getElementById("mergeB").addEventListener("change", updateMergePreview);
+
+  document.getElementById("doMerge").addEventListener("click", () => {
+    const idA = document.getElementById("mergeA").value;
+    const idB = document.getElementById("mergeB").value;
+    const mode = document.querySelector('input[name="mergeMode"]:checked').value === "new" ? "new" : "intoA";
+    const name = document.getElementById("mergeName").value;
+    const result = performMerge(idA, idB, mode, name);
+    const errorEl = document.getElementById("mergeError");
+    if(!result.ok){
+      errorEl.textContent = result.error;
+      return;
+    }
+    errorEl.textContent = "";
+    document.getElementById("mergeName").value = "";
+    renderDrawer();
+    renderGrid();
+    showToast("Merged into " + result.total + " unique item" + (result.total === 1 ? "" : "s") +
+      (result.duplicateCount > 0 ? " (" + result.duplicateCount + " duplicate" + (result.duplicateCount>1?"s":"") + " combined)" : ""));
+  });
+
+  // ---------- Boot ----------
+  async function boot(){
+    await loadState();
+    renderFilters();
+    renderGrid();
+    renderDrawer();
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
